@@ -18,6 +18,7 @@ from wike.search import SearchPanel
 from wike.toc import TocPanel
 from wike.view import WikiView
 from wike.wikipedia import Wikipedia
+from wike.zim import ZIM
 
 
 # Main window
@@ -370,6 +371,26 @@ class Window(Adw.ApplicationWindow):
       case 9:
         gesture.set_state(Gtk.EventSequenceState.CLAIMED)
         next_page_action.activate()
+
+  # Load ZIM file and create new tab with a page
+
+  def new_zim_page(self, archive, parent, select):
+    app = self.get_application()
+    entry = archive.get_entry_by_path(archive.main_entry.path)
+    item = entry.get_item()
+    uri = f'{app.server_uri}{archive.uuid}{os.sep}'
+    wiki = ZIM(urllib.parse.urlparse(uri), archive)
+    page = PageBox(self, WikiView(wiki), None)
+    tabpage = self.tabview.add_page(page, parent)
+    tabpage.set_live_thumbnail(True)
+    tabpage.set_title(item.title)
+
+    page.wikiview.load_uri(uri)
+
+    if select:
+      self.tabview.set_selected_page(tabpage)
+
+    return tabpage
 
   # Create new tab with a page
 

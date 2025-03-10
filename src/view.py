@@ -294,9 +294,7 @@ class WikiView(WebKit.WebView):
       return
     else:
       page = uri_path.replace('/wiki/', '', 1)
-      with contextlib.suppress(NotImplementedError):
-        # self.wiki.get_metadata_async()
-        self.wiki.get_properties(page, self._on_properties_finished, page)
+      self.wiki.get_properties(page, self._on_properties_finished, page)
 
   # On properties finished get results
 

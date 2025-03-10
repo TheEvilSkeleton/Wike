@@ -3,14 +3,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
+import os
 import sys
+from libzim.reader import Archive
+from pathlib import Path
+from uuid import UUID
 
 import gi
 gi.require_version('Gdk', '4.0')
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('WebKit', '6.0')
-from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit
+from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit, Soup
 
 from wike.data import settings, languages, history, bookmarks
 from wike.prefs import PrefsDialog
@@ -55,6 +59,11 @@ class Application(Adw.Application):
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), self._css_sepia, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
       case 3:
         self._style_manager.set_color_scheme(Adw.ColorScheme.PREFER_LIGHT)
+
+    action = Gio.SimpleAction.new('open-zim-archives', None)
+    action.connect('activate', self._on_open_zim_archives_action_cb)
+    self.add_action(action)
+    self.set_accels_for_action('app.open-zim-archives', ('<Ctrl>o',))
 
     action = Gio.SimpleAction.new('prefs', None)
     action.connect('activate', self._prefs_cb)
@@ -137,6 +146,94 @@ class Application(Adw.Application):
     self._style_manager.set_color_scheme(Adw.ColorScheme.FORCE_DARK)
     Gtk.StyleContext.remove_provider_for_display(Gdk.Display.get_default(), self._css_sepia)
     settings.set_int('theme', 1)
+
+  # Open ZIM archives
+
+  def _parse_server_data(self, path, referer):
+    uuid = Path(path).parts[1]
+    try:
+      UUID(uuid)
+      return (uuid, False)
+    except ValueError:
+      uri = GLib.Uri.parse(referer, GLib.UriFlags.NONE)
+      file_path = str(uri.get_path())
+      uuid = Path(file_path).parts[1]
+      UUID(uuid)
+      return (uuid, True)
+
+  def _on_server_handler(self, server, msg, path, query):
+    headers = msg.get_request_headers()
+    referer = str(headers.get_one('Referer'))
+
+    try:
+      uuid, should_redirect = self._parse_server_data(path, referer)
+    except (ValueError, GLib.GError):
+      body = f'{Soup.Status.get_phrase(Soup.Status.NOT_FOUND)}'.encode()
+      msg.set_response('text/html', Soup.MemoryUse.COPY, body)
+      msg.set_status(Soup.Status.NOT_FOUND, None)
+      return
+
+    archive = self.archives[uuid]
+    relative_path = path.split(os.sep, maxsplit=2)[-1]
+
+    if archive.has_entry_by_path(relative_path):
+      entry = archive.get_entry_by_path(relative_path)
+    elif not relative_path:
+      entry = archive.get_entry_by_path(archive.main_entry.path)
+    else:
+      body = f'{Soup.Status.get_phrase(Soup.Status.NOT_FOUND)}'.encode()
+      msg.set_response('text/html', Soup.MemoryUse.COPY, body)
+      msg.set_status(Soup.Status.NOT_FOUND, None)
+      return
+
+    if should_redirect:
+      article_path = str(Path(os.sep) / uuid / path.removeprefix(os.sep))
+      msg.set_redirect(Soup.Status.MOVED_PERMANENTLY, article_path)
+    else:
+      item = entry.get_item()
+      msg.set_response(item.mimetype, Soup.MemoryUse.COPY, item.content)
+      msg.set_status(Soup.Status.OK, None)
+
+  def _on_open_zim_archives_action_cb(self, action, *args):
+    def load_archives_cb(dialog, result):
+      try:
+        files = file_dialog.open_multiple_finish(result)
+      except GLib.GError:
+        return
+
+      if not self.server:
+        self.server = Soup.Server()
+        try:
+          self.server.listen_local(0, Soup.ServerListenOptions.IPV4_ONLY)
+        except GLib.Error:
+          self.server.listen_local(0, Soup.ServerListenOptions.IPV6_ONLY)
+        finally:
+          self.server_uri = self.server.get_uris()[0].to_string()
+          self.server.add_handler(None, self._on_server_handler)
+
+      for file in files:
+        file_path = str(file.get_path())
+        archive = Archive(Path(file_path))
+
+        uuid = str(archive.uuid)
+        if uuid not in self.archives:
+          self.archives[uuid] = archive
+
+        self._window.new_zim_page(archive, None, True)
+
+    file_filter_store = Gio.ListStore.new(Gtk.FileFilter)
+
+    file_filter = Gtk.FileFilter.new()
+    file_filter.add_mime_type('application/x-openzim')
+    file_filter.set_name(_('ZIM Archives'))
+
+    file_filter_store.append(file_filter)
+
+    file_dialog = Gtk.FileDialog.new()
+    file_dialog.set_modal(True)
+    file_dialog.set_filters(file_filter_store)
+    file_dialog.set_title(_('Open ZIM Archives'))
+    file_dialog.open_multiple(self._window, callback=load_archives_cb)
 
   # Show preferences dialog
 

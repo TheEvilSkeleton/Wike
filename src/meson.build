@@ -30,7 +30,8 @@ wike_sources = [
   'view.py',
   'wiki.py',
   'wikipedia.py',
-  'window.py'
+  'window.py',
+  'zim.py',
 ]
 
 install_data(wike_sources, install_dir: moduledir)
