@@ -341,8 +341,14 @@ class WikiView(WebKit.WebView):
       uri_fragment = uri_elements[5]
       match nav_type:
         case WebKit.NavigationType.LINK_CLICKED:
-          if uri_netloc.endswith('.wikipedia.org') and (uri_path.startswith('/wiki/') or uri_path == '/'):
-            base_uri_elements = (uri_elements[0], uri_elements[1].replace('.m.', '.'), uri_elements[2], '', '', '')
+          is_wikipedia = uri_netloc.endswith('.wikipedia.org') and (uri_path.startswith('/wiki/') or uri_path == '/')
+          is_zim = uri_netloc.startswith("127.0.0.1")
+          is_internal = is_wikipedia or is_zim
+          if is_internal:
+            if is_wikipedia:
+              base_uri_elements = (uri_elements[0], uri_elements[1].replace('.m.', '.'), uri_elements[2], '', '', '')
+            else:
+              base_uri_elements = *uri_elements,
             base_uri = urllib.parse.urlunparse(base_uri_elements)
             if mouse_button == 2:
               decision.ignore()

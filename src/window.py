@@ -368,6 +368,25 @@ class Window(Adw.ApplicationWindow):
         gesture.set_state(Gtk.EventSequenceState.CLAIMED)
         next_page_action.activate()
 
+  # Load ZIM file and create new tab with a page
+
+  def new_zim_page(self, archive, parent, select):
+    entry = archive.get_entry_by_path(archive.main_entry.path)
+    item = entry.get_item()
+    page = PageBox(self, None)
+    tabpage = self.tabview.add_page(page, parent)
+    tabpage.set_live_thumbnail(True)
+    tabpage.set_title(item.title)
+
+    app = self.get_application()
+
+    page.wikiview.load_uri(f'{app.uri}{archive.uuid}{os.sep}')
+
+    if select:
+      self.tabview.set_selected_page(tabpage)
+
+    return tabpage
+
   # Create new tab with a page
 
   def new_page(self, uri, parent, select):

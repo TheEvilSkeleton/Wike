@@ -12,6 +12,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <!-- App section -->
     <section>
       <item>
+        <attribute name="label" translatable="yes">Open ZIM Archives…</attribute>
+        <attribute name="action">app.open-zim-archives</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
         <attribute name="label" translatable="yes">Preferences</attribute>
         <attribute name="action">app.prefs</attribute>
       </item>

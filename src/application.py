@@ -3,14 +3,17 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
+import os
 import sys
+from libzim.reader import Archive
+from uuid import UUID
 
 import gi
 gi.require_version('Gdk', '4.0')
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 gi.require_version('WebKit', '6.0')
-from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit
+from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit, Soup
 
 from wike.data import settings, languages, history, bookmarks
 from wike.prefs import PrefsDialog
@@ -23,6 +26,10 @@ from wike.view import network_session
 class Application(Adw.Application):
 
   # Initialize app
+  server = None # Soup.Server()
+  uri = None
+  session = Soup.Session(user_agent='Wike/3.1.1 (https://github.com/hugolabe)')
+  archives = {}
 
   def __init__(self):
     super().__init__(application_id='com.github.hugolabe.Wike', flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
@@ -52,6 +59,11 @@ class Application(Adw.Application):
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), self._css_sepia, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
       case 3:
         self._style_manager.set_color_scheme(Adw.ColorScheme.PREFER_LIGHT)
+
+    action = Gio.SimpleAction.new('open-zim-archives', None)
+    action.connect('activate', self._open_zim_archives_cb)
+    self.add_action(action)
+    self.set_accels_for_action('app.open-zim-archives', ('<Ctrl>o',))
 
     action = Gio.SimpleAction.new('prefs', None)
     action.connect('activate', self._prefs_cb)
@@ -134,6 +146,76 @@ class Application(Adw.Application):
     self._style_manager.set_color_scheme(Adw.ColorScheme.FORCE_DARK)
     Gtk.StyleContext.remove_provider_for_display(Gdk.Display.get_default(), self._css_sepia)
     settings.set_int('theme', 1)
+
+  def _soup_server_cb(self, server, msg, path, query):
+    headers = msg.get_request_headers()
+    referer = headers.get_one('Referer')
+
+    if referer:
+      uri = GLib.Uri.parse(referer, GLib.UriFlags.NONE)
+      uuid = uri.get_path().split(os.sep)[1]
+    elif path:
+      uuid = path.split(os.sep)[1]
+
+    archive = self.archives[uuid]
+    relative_path = path.split(os.sep, maxsplit=2)[-1]
+
+    if archive.has_entry_by_path(relative_path):
+      entry = archive.get_entry_by_path(relative_path)
+    elif not relative_path:
+      entry = archive.get_entry_by_path(archive.main_entry.path)
+    else:
+      body = f'{Soup.Status.get_phrase(Soup.Status.NOT_FOUND)}'.encode()
+      msg.set_response('text/html', Soup.MemoryUse.COPY, body)
+      msg.set_status(Soup.Status.NOT_FOUND, None)
+      return
+
+    item = entry.get_item()
+    msg.set_response(item.mimetype, Soup.MemoryUse.COPY, item.content)
+    msg.set_status(Soup.Status.OK, None)
+
+  # Open ZIM archives
+
+  def _open_zim_archives_cb(self, action, parameter):
+    def open_zim_archives_cb(dialog, result):
+      try:
+        files = list(file_dialog.open_multiple_finish(result))
+      except GLib.GError:
+        return
+
+      if not self.server:
+        self.server = Soup.Server()
+        try:
+          self.server.listen_local(0, Soup.ServerListenOptions.IPV4_ONLY)
+        except GLib.Error:
+          self.server.listen_local(0, Soup.ServerListenOptions.IPV6_ONLY)
+        finally:
+          self.uri = self.server.get_uris()[0].to_string()
+          self.server.add_handler(None, self._soup_server_cb)
+
+      for file in files:
+        file_hash = file.hash()
+
+        archive = Archive(file.get_path())
+        uuid = f'{archive.uuid}'
+        if uuid not in self.archives:
+           self.archives[uuid] = archive
+
+        self._window.new_zim_page(archive, None, True)
+
+    file_filter_store = Gio.ListStore.new(Gtk.FileFilter)
+
+    file_filter = Gtk.FileFilter.new()
+    file_filter.add_mime_type('application/x-openzim')
+    file_filter.set_name(_('ZIM Archives'))
+
+    file_filter_store.append(file_filter)
+
+    file_dialog = Gtk.FileDialog.new()
+    file_dialog.set_modal(True)
+    file_dialog.set_filters(file_filter_store)
+    file_dialog.set_title(_('Open ZIM Archives'))
+    file_dialog.open_multiple(self._window, callback=open_zim_archives_cb)
 
   # Show preferences dialog
 
