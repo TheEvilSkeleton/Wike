@@ -2,22 +2,9 @@
 # SPDX-FileCopyrightText: 2021-24 Hugo Olabera <hugolabe@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-
-import json, urllib.parse
-
-from gi.repository import Soup
-
 from wike.wiki import Wiki
 
-
-# Create a Soup session and set user agent
-
-# session = Soup.Session.new()
-# session.set_user_agent('Wike/3.1.1 (https://github.com/hugolabe)')
-
-# Get Wikipedia random page
-
-class Wikipedia(Wiki):
+class ZIM(Wiki):
   def get_random(self, lang, callback):
     endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
     params = { 'action': 'query',
