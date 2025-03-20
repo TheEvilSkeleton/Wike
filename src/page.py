@@ -7,6 +7,7 @@ from gi.repository import Gdk, Gtk, Adw, WebKit
 
 from wike.data import settings
 from wike.view import WikiView
+from wike.wikipedia import Wikipedia
 
 
 # Page box for each tab
@@ -31,7 +32,9 @@ class PageBox(Gtk.Box):
     self._window = window
     self.lazy_load = lazy_load
 
-    self.wikiview = WikiView()
+    app = window.get_application()
+
+    self.wikiview = WikiView(Wikipedia(app.session))
     self.wikiview.set_vexpand(True)
     self.view_stack.add_named(self.wikiview, 'wikiview')
     self.view_stack.set_visible_child_name('wikiview')

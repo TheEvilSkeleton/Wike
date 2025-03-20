@@ -15,6 +15,7 @@ from wike.menu import ArticleMenuPopover, MainMenuPopover, ViewMenuPopover
 from wike.page import PageBox
 from wike.search import SearchPanel
 from wike.toc import TocPanel
+from wike.zim import ZIM
 
 
 # Main window

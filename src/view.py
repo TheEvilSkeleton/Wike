@@ -7,7 +7,7 @@ import urllib.parse
 
 from gi.repository import GLib, GObject, Gio, Gdk, Gtk, Adw, WebKit
 
-from wike import wikipedia
+# from wike import wikipedia
 from wike.data import settings, languages, bookmarks
 
 
@@ -148,8 +148,10 @@ class WikiView(WebKit.WebView):
 
   # Initialize view with user content and web settings
 
-  def __init__(self):
+  def __init__(self, wiki):
     super().__init__(settings=view_settings.web_settings, user_content_manager=view_settings.user_content)
+
+    self.wiki = wiki
 
     theme = settings.get_int('theme')
     match theme:
@@ -197,13 +199,13 @@ class WikiView(WebKit.WebView):
   # Get Wikipedia random article async
 
   def load_random(self):
-    wikipedia.get_random(settings.get_string('search-language'), self._on_random_finished)
+    self.wiki.get_random(settings.get_string('search-language'), self._on_random_finished)
 
   # On random finished get results
 
   def _on_random_finished(self, session, async_result, user_data):
     try:
-      uri = wikipedia.random_result(async_result)
+      uri = self.wiki.random_result(async_result)
     except:
       self.load_message('error')
     else:
@@ -298,13 +300,13 @@ class WikiView(WebKit.WebView):
     else:
       page = uri_path.replace('/wiki/', '', 1)
       lang = uri_netloc.split('.', 1)[0]
-      wikipedia.get_properties(page, lang, self._on_properties_finished, page)
+      self.wiki.get_properties(page, lang, self._on_properties_finished, page)
 
   # On properties finished get results
 
   def _on_properties_finished(self, session, async_result, page):
     try:
-      props = wikipedia.properties_result(async_result)
+      props = self.wiki.properties_result(async_result)
     except:
       self.emit('load-props')
     else:
