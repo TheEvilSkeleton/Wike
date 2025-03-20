@@ -6,21 +6,30 @@ class Wiki:
   def __init__(self, session):
     self.session = session
 
-  def get_random(lang, callback):
-    raise NotImplementedError
+  def get_language(self):
+    ...
 
-  def random_result(async_result):
-    raise NotImplementedError
+  def get_random_page(self):
+    ...
 
-  def search(text, lang, limit, callback):
-    raise NotImplementedError
+  def search(self, string):
+    ...
 
-  def search_result(async_result):
-    raise NotImplementedError
+  # def get_random(lang, callback):
+  #   raise NotImplementedError
 
-  def get_properties(page, lang, callback, user_data):
-    raise NotImplementedError
+  # def random_result(async_result):
+  #   raise NotImplementedError
 
-  def properties_result(async_result):
-    raise NotImplementedError
+  # def search(text, lang, limit, callback):
+  #   raise NotImplementedError
+
+  # def search_result(async_result):
+  #   raise NotImplementedError
+
+  # def get_properties(page, lang, callback, user_data):
+  #   raise NotImplementedError
+
+  # def properties_result(async_result):
+  #   raise NotImplementedError
 
