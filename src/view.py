@@ -193,13 +193,12 @@ class WikiView(WebKit.WebView):
   # Load Wikipedia main page
 
   def load_main(self):
-    uri = 'https://' + settings.get_string('search-language') + '.m.wikipedia.org'
-    self.load_wiki(uri)
+    self.load_wiki(self.wiki.get_main_uri())
 
   # Get Wikipedia random article async
 
   def load_random(self):
-    self.wiki.get_random(settings.get_string('search-language'), self._on_random_finished)
+    self.wiki.get_random(self._on_random_finished)
 
   # On random finished get results
 
@@ -298,7 +297,6 @@ class WikiView(WebKit.WebView):
       self.emit('load-props')
       return
     else:
-      print("''")
       page = uri_path.replace('/wiki/', '', 1)
       lang = uri_netloc.split('.', 1)[0]
       self.wiki.get_properties(page, lang, self._on_properties_finished, page)

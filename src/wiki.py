@@ -3,17 +3,17 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 class Wiki:
-  def __init__(self, session):
-    self.session = session
+  def get_main_uri(self):
+    raise NotImplementedError
 
   def get_language(self):
-    ...
+    raise NotImplementedError
 
   def get_random_page(self):
-    ...
+    raise NotImplementedError
 
   def search(self, string):
-    ...
+    raise NotImplementedError
 
   # def get_random(lang, callback):
   #   raise NotImplementedError

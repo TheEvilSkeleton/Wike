@@ -5,8 +5,9 @@
 from wike.wiki import Wiki
 
 class ZIM(Wiki):
-  def __init__(self, server, **kwargs):
-    self.server = server
+  def __init__(self, archive):
+    self.archive = archive
+
   def get_random(self, lang, callback):
     endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
     params = { 'action': 'query',
