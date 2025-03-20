@@ -23,6 +23,9 @@ from wike.view import network_session
 class Application(Adw.Application):
 
   # Initialize app
+  server = None # Soup.Server()
+  server_uri = None
+  archives = {}
 
   def __init__(self):
     super().__init__(application_id='com.github.hugolabe.Wike', flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)

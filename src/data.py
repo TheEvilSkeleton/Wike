@@ -6,8 +6,10 @@
 import json
 from datetime import datetime
 
-from gi.repository import GLib, Gio
+from gi.repository import GLib, Gio, Soup
 
+
+session = Soup.Session(user_agent='Wike/3.1.1 (https://github.com/hugolabe)')
 
 # Create app settings object and set data path
 

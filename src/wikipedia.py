@@ -7,111 +7,119 @@ import json, urllib.parse
 
 from gi.repository import Soup
 
+from wike.data import session, settings
+from wike.wiki import Wiki
 
-# Create a Soup session and set user agent
-
-session = Soup.Session.new()
-session.set_user_agent('Wike/3.1.1 (https://github.com/hugolabe)')
 
 # Get Wikipedia random page
 
-def get_random(lang, callback):
-  endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
-  params = { 'action': 'query',
-             'generator': 'random',
-             'grnlimit': 1,
-             'grnnamespace': 0,
-             'prop': 'info',
-             'inprop': 'url',
-             'format': 'json' }
+class Wikipedia(Wiki):
+  def get_is_internal(self, uri_elements):
+    return uri_elements.netloc.endswith('.wikipedia.org') and (uri_elements.path.startswith('/wiki/') or uri_elements.path == '/')
 
-  _request(endpoint, params, callback, None)
+  def get_base_uri(self, uri_elements):
+    return (uri_elements.scheme, uri_elements.netloc.replace('.m.', '.'), uri_elements.path, '', '', '')
 
-# Get random result from response data
+  def get_main_uri(self):
+    return 'https://' + settings.get_string('search-language') + '.m.wikipedia.org'
 
-def random_result(async_result):
-  response = session.send_and_read_finish(async_result)
-  data = response.get_data()
-  result = json.loads(data)
+  def get_random(self, callback):
+    print(settings.get_string('search-language'))
+    lang = settings.get_string('search-language')
+    endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
+    params = { 'action': 'query',
+               'generator': 'random',
+               'grnlimit': 1,
+               'grnnamespace': 0,
+               'prop': 'info',
+               'inprop': 'url',
+               'format': 'json' }
 
-  pages = result['query']['pages']
-  page_props = list(pages.values())[0]
-  uri = page_props['fullurl']
-  return uri
+    self._request(endpoint, params, callback, None)
 
-# Search Wikipedia with a limit of responses
+  # Get random result from response data
 
-def search(text, lang, limit, callback):
-  endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
-  params = { 'action': 'opensearch',
-             'search': text,
-             'limit': limit,
-             'namespace': 0,
-             'redirects': 'resolve',
-             'format': 'json' }
-
-  if callback:
-    _request(endpoint, params, callback, None)
-    return
-
-  data = _request(endpoint, params, None, None)
-
-  if data:
+  def random_result(self, async_result):
+    response = session.send_and_read_finish(async_result)
+    data = response.get_data()
     result = json.loads(data)
+
+    pages = result['query']['pages']
+    page_props = list(pages.values())[0]
+    uri = page_props['fullurl']
+    return uri
+
+  # Search Wikipedia with a limit of responses
+
+  def search(self, text, lang, limit, callback):
+    endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
+    params = { 'action': 'opensearch',
+               'search': text,
+               'limit': limit,
+               'namespace': 0,
+               'redirects': 'resolve',
+               'format': 'json' }
+
+    if callback:
+      self._request(endpoint, params, callback, None)
+      return
+
+    data = self._request(endpoint, params, None, None)
+
+    if data:
+      result = json.loads(data)
+      if len(result[1]) > 0:
+        return result[1], result[3]
+
+    return None
+
+  # Get search results from response data
+
+  def search_result(self, async_result):
+    response = session.send_and_read_finish(async_result)
+    data = response.get_data()
+    result = json.loads(data)
+
     if len(result[1]) > 0:
       return result[1], result[3]
+    else:
+      return None
 
-  return None
+  # Get various properties for Wikipedia page
 
-# Get search results from response data
+  def get_properties(self, page, callback, user_data):
+    endpoint = 'https://' + settings.get_string('search-language') + '.wikipedia.org/w/api.php'
+    params = { 'action': 'parse',
+               'prop': 'sections|langlinks',
+               'redirects': 1,
+               'page': page,
+               'format': 'json' }
 
-def search_result(async_result):
-  response = session.send_and_read_finish(async_result)
-  data = response.get_data()
-  result = json.loads(data)
+    self._request(endpoint, params, callback, user_data)
 
-  if len(result[1]) > 0:
-    return result[1], result[3]
-  else:
-    return None
+  # Get properties result from response data
 
-# Get various properties for Wikipedia page
-
-def get_properties(page, lang, callback, user_data):
-  endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
-  params = { 'action': 'parse',
-             'prop': 'sections|langlinks',
-             'redirects': 1,
-             'page': page,
-             'format': 'json' }
-
-  _request(endpoint, params, callback, user_data)
-
-# Get properties result from response data
-
-def properties_result(async_result):
-  response = session.send_and_read_finish(async_result)
-  data = response.get_data()
-  result = json.loads(data)
-
-  return result['parse']
-
-# Perform query to Wikipedia API with given parameters
-
-def _request(endpoint, params, callback, user_data):
-  global session
-
-  params_encoded = urllib.parse.urlencode(params, safe='%=&|')
-  message = Soup.Message.new_from_encoded_form('GET', endpoint, params_encoded)
-
-  if callback:
-    session.send_and_read_async(message, 0, None, callback, user_data)
-    return
-  else:
-    response = session.send_and_read(message, None)
-
-  if message.get_status() == Soup.Status.OK:
+  def properties_result(self, async_result):
+    response = session.send_and_read_finish(async_result)
     data = response.get_data()
-    return data
-  else:
-    return None
+    result = json.loads(data)
+
+    return result['parse']
+
+  # Perform query to Wikipedia API with given parameters
+
+  def _request(self, endpoint, params, callback, user_data):
+    params_encoded = urllib.parse.urlencode(params, safe='%=&|')
+    message = Soup.Message.new_from_encoded_form('GET', endpoint, params_encoded)
+
+    if callback:
+      session.send_and_read_async(message, 0, None, callback, user_data)
+      return
+    else:
+      response = session.send_and_read(message, None)
+
+    if message.get_status() == Soup.Status.OK:
+      data = response.get_data()
+      return data
+    else:
+      return None

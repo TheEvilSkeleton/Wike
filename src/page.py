@@ -7,6 +7,7 @@ from gi.repository import Gdk, Gtk, Adw, WebKit
 
 from wike.data import settings
 from wike.view import WikiView
+from wike.wikipedia import Wikipedia
 
 
 # Page box for each tab
@@ -25,13 +26,15 @@ class PageBox(Gtk.Box):
 
   # Add stack pages, initialize find controller and connect signals
 
-  def __init__(self, window, lazy_load):
+  def __init__(self, window, wikiview, lazy_load):
     super().__init__()
 
     self._window = window
     self.lazy_load = lazy_load
 
-    self.wikiview = WikiView()
+    app = window.get_application()
+
+    self.wikiview = wikiview
     self.wikiview.set_vexpand(True)
     self.view_stack.add_named(self.wikiview, 'wikiview')
     self.view_stack.set_visible_child_name('wikiview')

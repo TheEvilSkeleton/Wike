@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
+import contextlib
 import urllib.parse
 
 from gi.repository import GLib, GObject, Gio, Gdk, Gtk, Adw, WebKit
 
-from wike import wikipedia
+# from wike import wikipedia
 from wike.data import settings, languages, bookmarks
 
 
@@ -148,8 +149,10 @@ class WikiView(WebKit.WebView):
 
   # Initialize view with user content and web settings
 
-  def __init__(self):
+  def __init__(self, wiki):
     super().__init__(settings=view_settings.web_settings, user_content_manager=view_settings.user_content)
+
+    self.wiki = wiki
 
     theme = settings.get_int('theme')
     match theme:
@@ -191,19 +194,18 @@ class WikiView(WebKit.WebView):
   # Load Wikipedia main page
 
   def load_main(self):
-    uri = 'https://' + settings.get_string('search-language') + '.m.wikipedia.org'
-    self.load_wiki(uri)
+    self.load_wiki(self.wiki.get_main_uri())
 
   # Get Wikipedia random article async
 
   def load_random(self):
-    wikipedia.get_random(settings.get_string('search-language'), self._on_random_finished)
+    self.wiki.get_random(self._on_random_finished)
 
   # On random finished get results
 
   def _on_random_finished(self, session, async_result, user_data):
     try:
-      uri = wikipedia.random_result(async_result)
+      uri = self.wiki.random_result(async_result)
     except:
       self.load_message('error')
     else:
@@ -221,14 +223,9 @@ class WikiView(WebKit.WebView):
   # Get base uri for current article
 
   def get_base_uri(self):
-    uri = self.get_uri().replace('.m.', '.')
-    uri_elements = urllib.parse.urlparse(uri)
-    if uri_elements[5]:
-      base_uri_elements = (uri_elements[0], uri_elements[1], uri_elements[2], '', '', '')
-      base_uri = urllib.parse.urlunparse(base_uri_elements)
-      return base_uri
-    else:
-      return uri
+    base_uri_elements = self.wiki.get_base_uri(urllib.parse.urlparse(self.get_uri()))
+    base_uri = urllib.parse.urlunparse(base_uri_elements)
+    return base_uri
 
   # Get language for current article
 
@@ -297,14 +294,15 @@ class WikiView(WebKit.WebView):
       return
     else:
       page = uri_path.replace('/wiki/', '', 1)
-      lang = uri_netloc.split('.', 1)[0]
-      wikipedia.get_properties(page, lang, self._on_properties_finished, page)
+      with contextlib.suppress(NotImplementedError):
+        # self.wiki.get_metadata_async()
+        self.wiki.get_properties(page, self._on_properties_finished, page)
 
   # On properties finished get results
 
   def _on_properties_finished(self, session, async_result, page):
     try:
-      props = wikipedia.properties_result(async_result)
+      props = self.wiki.properties_result(async_result)
     except:
       self.emit('load-props')
     else:
@@ -329,7 +327,7 @@ class WikiView(WebKit.WebView):
   # Webview decision policy event
 
   def do_decide_policy(self, decision, decision_type):
-    if decision_type == WebKit.PolicyDecisionType.NAVIGATION_ACTION or decision_type == WebKit.PolicyDecisionType.NEW_WINDOW_ACTION:
+    if decision_type in (WebKit.PolicyDecisionType.NAVIGATION_ACTION, WebKit.PolicyDecisionType.NEW_WINDOW_ACTION):
       nav_action = decision.get_navigation_action()
       nav_type = nav_action.get_navigation_type()
       mouse_button = nav_action.get_mouse_button()
@@ -341,16 +339,15 @@ class WikiView(WebKit.WebView):
       uri_fragment = uri_elements[5]
       match nav_type:
         case WebKit.NavigationType.LINK_CLICKED:
-          if uri_netloc.endswith('.wikipedia.org') and (uri_path.startswith('/wiki/') or uri_path == '/'):
-            base_uri_elements = (uri_elements[0], uri_elements[1].replace('.m.', '.'), uri_elements[2], '', '', '')
+          if self.wiki.get_is_internal(uri_elements):
+            base_uri_elements = self.wiki.get_base_uri(uri_elements)
             base_uri = urllib.parse.urlunparse(base_uri_elements)
             if mouse_button == 2:
               decision.ignore()
               self.emit('new-page', base_uri)
-            else:
-              if base_uri != self.get_base_uri():
-                decision.ignore()
-                self.load_wiki(uri)
+            elif base_uri != self.get_base_uri():
+              decision.ignore()
+              self.load_wiki(uri)
           else:
             decision.ignore()
             Gtk.show_uri(None, uri, Gdk.CURRENT_TIME)

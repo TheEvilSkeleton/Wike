@@ -4,6 +4,7 @@
 
 
 import os
+import urllib.parse
 
 from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit
 
@@ -15,6 +16,8 @@ from wike.menu import ArticleMenuPopover, MainMenuPopover, ViewMenuPopover
 from wike.page import PageBox
 from wike.search import SearchPanel
 from wike.toc import TocPanel
+from wike.view import WikiView
+from wike.wikipedia import Wikipedia
 
 
 # Main window
@@ -89,7 +92,7 @@ class Window(Adw.ApplicationWindow):
     self.history_panel = HistoryPanel(self)
     history_stack_page = self.panel_stack.add_named(self.history_panel, 'history')
 
-    self.page = PageBox(self, None)
+    self.page = PageBox(self, WikiView(Wikipedia()), None)
 
     if launch_uri != '':
       tabpage = self.tabview.append(self.page)
@@ -371,7 +374,7 @@ class Window(Adw.ApplicationWindow):
   # Create new tab with a page
 
   def new_page(self, uri, parent, select):
-    page = PageBox(self, None)
+    page = PageBox(self, WikiView(Wikipedia()), None)
     tabpage = self.tabview.add_page(page, parent)
     tabpage.set_live_thumbnail(True)
 
@@ -393,7 +396,7 @@ class Window(Adw.ApplicationWindow):
   # New empty tab with a title for lazy-loading
 
   def new_lazy_page(self, uri, title, parent):
-    page = PageBox(self, [uri,title])
+    page = PageBox(self, WikiView(Wikipedia()), [uri,title])
     tabpage = self.tabview.add_page(page, parent)
     tabpage.set_live_thumbnail(True)
     tabpage.set_title(title)

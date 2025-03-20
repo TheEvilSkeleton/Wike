@@ -28,6 +28,7 @@ wike_sources = [
   'search.py',
   'toc.py',
   'view.py',
+  'wiki.py',
   'wikipedia.py',
   'window.py'
 ]
