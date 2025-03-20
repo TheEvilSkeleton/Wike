@@ -71,7 +71,7 @@ class SearchPanel(Adw.Bin):
     if settings.get_boolean('search-suggestions'):
       text, lang = self._get_search_terms(search_entry.get_text())
       if len(text) > 2:
-        wikipedia.search(text.lower(), lang, 20, self._on_search_finished)
+        self.window.page.wikiview.wiki.search(text.lower(), lang, 20, self._on_search_finished)
       else:
         self._populate(None)
     else:
@@ -81,7 +81,7 @@ class SearchPanel(Adw.Bin):
 
   def _on_search_finished(self, session, async_result, user_data):
     try:
-      results = wikipedia.search_result(async_result)
+      results = self.window.page.wikiview.wiki.search_result(async_result)
     except:
       self._populate(None)
     else:
@@ -121,13 +121,13 @@ class SearchPanel(Adw.Bin):
 
     text, lang = self._get_search_terms(search_entry.get_text())
     if text != '':
-      wikipedia.search(text.lower(), lang, 1, self._on_activate_result)
+      self.window.page.wikiview.wiki.search(text.lower(), lang, 1, self._on_activate_result)
 
   # On search activate finished get result and load article
   
   def _on_activate_result(self, session, async_result, user_data):
     try:
-      results = wikipedia.search_result(async_result)
+      results = self.window.page.wikiview.wiki.search_result(async_result)
     except:
       self.window.page.wikiview.load_message('error')
     else:

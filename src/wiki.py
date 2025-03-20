@@ -3,9 +3,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 class Wiki:
-  def __init__(self, session):
-    self.session = session
-
   def get_language(self):
     ...
 

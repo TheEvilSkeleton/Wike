@@ -7,6 +7,7 @@ import json, urllib.parse
 
 from gi.repository import Soup
 
+from wike.data import session
 from wike.wiki import Wiki
 
 
@@ -33,7 +34,7 @@ class Wikipedia(Wiki):
   # Get random result from response data
 
   def random_result(self, async_result):
-    response = self.session.send_and_read_finish(async_result)
+    response = session.send_and_read_finish(async_result)
     data = response.get_data()
     result = json.loads(data)
 
@@ -69,7 +70,7 @@ class Wikipedia(Wiki):
   # Get search results from response data
 
   def search_result(self, async_result):
-    response = self.session.send_and_read_finish(async_result)
+    response = session.send_and_read_finish(async_result)
     data = response.get_data()
     result = json.loads(data)
 
@@ -93,7 +94,7 @@ class Wikipedia(Wiki):
   # Get properties result from response data
 
   def properties_result(self, async_result):
-    response = self.session.send_and_read_finish(async_result)
+    response = session.send_and_read_finish(async_result)
     data = response.get_data()
     result = json.loads(data)
 
@@ -106,10 +107,10 @@ class Wikipedia(Wiki):
     message = Soup.Message.new_from_encoded_form('GET', endpoint, params_encoded)
 
     if callback:
-      self.session.send_and_read_async(message, 0, None, callback, user_data)
+      session.send_and_read_async(message, 0, None, callback, user_data)
       return
     else:
-      response = self.session.send_and_read(message, None)
+      response = session.send_and_read(message, None)
 
     if message.get_status() == Soup.Status.OK:
       data = response.get_data()

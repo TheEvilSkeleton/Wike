@@ -26,7 +26,7 @@ class PageBox(Gtk.Box):
 
   # Add stack pages, initialize find controller and connect signals
 
-  def __init__(self, window, lazy_load):
+  def __init__(self, window, wikiview, lazy_load):
     super().__init__()
 
     self._window = window
@@ -34,7 +34,7 @@ class PageBox(Gtk.Box):
 
     app = window.get_application()
 
-    self.wikiview = WikiView(Wikipedia(app.session))
+    self.wikiview = WikiView(Wikipedia())
     self.wikiview.set_vexpand(True)
     self.view_stack.add_named(self.wikiview, 'wikiview')
     self.view_stack.set_visible_child_name('wikiview')

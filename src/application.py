@@ -28,7 +28,6 @@ class Application(Adw.Application):
   # Initialize app
   server = None # Soup.Server()
   uri = None
-  session = Soup.Session(user_agent='Wike/3.1.1 (https://github.com/hugolabe)')
   archives = {}
 
   def __init__(self):

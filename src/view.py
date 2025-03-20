@@ -298,7 +298,6 @@ class WikiView(WebKit.WebView):
       self.emit('load-props')
       return
     else:
-      print("''")
       page = uri_path.replace('/wiki/', '', 1)
       lang = uri_netloc.split('.', 1)[0]
       self.wiki.get_properties(page, lang, self._on_properties_finished, page)
