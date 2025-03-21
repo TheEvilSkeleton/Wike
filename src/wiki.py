@@ -27,9 +27,9 @@ class Wiki:
   # def search_result(async_result):
   #   raise NotImplementedError
 
-  # def get_properties(page, lang, callback, user_data):
-  #   raise NotImplementedError
+  def get_properties(self, page, callback, user_data):
+    raise NotImplementedError
 
-  # def properties_result(async_result):
-  #   raise NotImplementedError
+  def properties_result(async_result):
+    raise NotImplementedError
 

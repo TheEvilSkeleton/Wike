@@ -34,7 +34,7 @@ class Wikipedia(Wiki):
                'inprop': 'url',
                'format': 'json' }
 
-    self._request(endpoint, params, callback, None)
+    self.__request(endpoint, params, callback, None)
 
   # Get random result from response data
 
@@ -60,10 +60,10 @@ class Wikipedia(Wiki):
                'format': 'json' }
 
     if callback:
-      self._request(endpoint, params, callback, None)
+      self.__request(endpoint, params, callback, None)
       return
 
-    data = self._request(endpoint, params, None, None)
+    data = self.__request(endpoint, params, None, None)
 
     if data:
       result = json.loads(data)
@@ -86,15 +86,15 @@ class Wikipedia(Wiki):
 
   # Get various properties for Wikipedia page
 
-  def get_properties(self, page, lang, callback, user_data):
-    endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
+  def get_properties(self, page, callback, user_data):
+    endpoint = 'https://' + settings.get_string('search-language') + '.wikipedia.org/w/api.php'
     params = { 'action': 'parse',
                'prop': 'sections|langlinks',
                'redirects': 1,
                'page': page,
                'format': 'json' }
 
-    self._request(endpoint, params, callback, user_data)
+    self.__request(endpoint, params, callback, user_data)
 
   # Get properties result from response data
 
@@ -107,7 +107,7 @@ class Wikipedia(Wiki):
 
   # Perform query to Wikipedia API with given parameters
 
-  def _request(self, endpoint, params, callback, user_data):
+  def __request(self, endpoint, params, callback, user_data):
     params_encoded = urllib.parse.urlencode(params, safe='%=&|')
     message = Soup.Message.new_from_encoded_form('GET', endpoint, params_encoded)
 

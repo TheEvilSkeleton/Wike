@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
+import contextlib
 import urllib.parse
 
 from gi.repository import GLib, GObject, Gio, Gdk, Gtk, Adw, WebKit
@@ -298,8 +299,9 @@ class WikiView(WebKit.WebView):
       return
     else:
       page = uri_path.replace('/wiki/', '', 1)
-      lang = uri_netloc.split('.', 1)[0]
-      self.wiki.get_properties(page, lang, self._on_properties_finished, page)
+      with contextlib.suppress(NotImplementedError):
+        # self.wiki.get_metadata_async()
+        self.wiki.get_properties(page, self._on_properties_finished, page)
 
   # On properties finished get results
 

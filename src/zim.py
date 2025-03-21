@@ -70,15 +70,15 @@ class ZIM(Wiki):
 
   # Get various properties for Wikipedia page
 
-  def get_properties(self, page, lang, callback, user_data):
-    endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
-    params = { 'action': 'parse',
-               'prop': 'sections|langlinks',
-               'redirects': 1,
-               'page': page,
-               'format': 'json' }
+  # def get_properties(self, page, callback, user_data):
+  #   endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
+  #   params = { 'action': 'parse',
+  #              'prop': 'sections|langlinks',
+  #              'redirects': 1,
+  #              'page': page,
+  #              'format': 'json' }
 
-    self._request(endpoint, params, callback, user_data)
+  #   self._request(endpoint, params, callback, user_data)
 
   # Get properties result from response data
 
