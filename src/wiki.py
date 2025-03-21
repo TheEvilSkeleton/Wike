@@ -3,6 +3,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 class Wiki:
+  base_uri_elements = ...
+
+  def get_is_internal(self, uri_elements):
+    return self.base_uri_elements.netloc == uri_elements.netloc
+
+  def get_base_uri(self, uri_elements):
+    return (uri_elements.scheme, uri_elements.netloc, uri_elements.path, '', '', '')
+
   def get_main_uri(self):
     raise NotImplementedError
 

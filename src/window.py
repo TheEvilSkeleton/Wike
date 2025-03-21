@@ -4,6 +4,7 @@
 
 
 import os
+import urllib.parse
 
 from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit
 
@@ -374,16 +375,17 @@ class Window(Adw.ApplicationWindow):
   # Load ZIM file and create new tab with a page
 
   def new_zim_page(self, archive, parent, select):
+    app = self.get_application()
     entry = archive.get_entry_by_path(archive.main_entry.path)
     item = entry.get_item()
-    page = PageBox(self, WikiView(ZIM(archive)), None)
+    uri = f'{app.server_uri}{archive.uuid}{os.sep}'
+    wiki = ZIM(urllib.parse.urlparse(uri), archive)
+    page = PageBox(self, WikiView(wiki), None)
     tabpage = self.tabview.add_page(page, parent)
     tabpage.set_live_thumbnail(True)
     tabpage.set_title(item.title)
 
-    app = self.get_application()
-
-    page.wikiview.load_uri(f'{app.uri}{archive.uuid}{os.sep}')
+    page.wikiview.load_uri(uri)
 
     if select:
       self.tabview.set_selected_page(tabpage)

@@ -223,14 +223,9 @@ class WikiView(WebKit.WebView):
   # Get base uri for current article
 
   def get_base_uri(self):
-    uri = self.get_uri().replace('.m.', '.')
-    uri_elements = urllib.parse.urlparse(uri)
-    if uri_elements[5]:
-      base_uri_elements = (uri_elements[0], uri_elements[1], uri_elements[2], '', '', '')
-      base_uri = urllib.parse.urlunparse(base_uri_elements)
-      return base_uri
-    else:
-      return uri
+    base_uri_elements = self.wiki.get_base_uri(urllib.parse.urlparse(self.get_uri()))
+    base_uri = urllib.parse.urlunparse(base_uri_elements)
+    return base_uri
 
   # Get language for current article
 
@@ -332,7 +327,7 @@ class WikiView(WebKit.WebView):
   # Webview decision policy event
 
   def do_decide_policy(self, decision, decision_type):
-    if decision_type == WebKit.PolicyDecisionType.NAVIGATION_ACTION or decision_type == WebKit.PolicyDecisionType.NEW_WINDOW_ACTION:
+    if decision_type in (WebKit.PolicyDecisionType.NAVIGATION_ACTION, WebKit.PolicyDecisionType.NEW_WINDOW_ACTION):
       nav_action = decision.get_navigation_action()
       nav_type = nav_action.get_navigation_type()
       mouse_button = nav_action.get_mouse_button()
@@ -344,22 +339,15 @@ class WikiView(WebKit.WebView):
       uri_fragment = uri_elements[5]
       match nav_type:
         case WebKit.NavigationType.LINK_CLICKED:
-          is_wikipedia = uri_netloc.endswith('.wikipedia.org') and (uri_path.startswith('/wiki/') or uri_path == '/')
-          is_zim = uri_netloc.startswith("127.0.0.1")
-          is_internal = is_wikipedia or is_zim
-          if is_internal:
-            if is_wikipedia:
-              base_uri_elements = (uri_elements[0], uri_elements[1].replace('.m.', '.'), uri_elements[2], '', '', '')
-            else:
-              base_uri_elements = *uri_elements,
+          if self.wiki.get_is_internal(uri_elements):
+            base_uri_elements = self.wiki.get_base_uri(uri_elements)
             base_uri = urllib.parse.urlunparse(base_uri_elements)
             if mouse_button == 2:
               decision.ignore()
               self.emit('new-page', base_uri)
-            else:
-              if base_uri != self.get_base_uri():
-                decision.ignore()
-                self.load_wiki(uri)
+            elif base_uri != self.get_base_uri():
+              decision.ignore()
+              self.load_wiki(uri)
           else:
             decision.ignore()
             Gtk.show_uri(None, uri, Gdk.CURRENT_TIME)

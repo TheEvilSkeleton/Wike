@@ -5,7 +5,8 @@
 from wike.wiki import Wiki
 
 class ZIM(Wiki):
-  def __init__(self, archive):
+  def __init__(self, base_uri_elements, archive):
+    self.base_uri_elements = base_uri_elements
     self.archive = archive
 
   def get_random(self, lang, callback):

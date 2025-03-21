@@ -19,6 +19,12 @@ from wike.wiki import Wiki
 # Get Wikipedia random page
 
 class Wikipedia(Wiki):
+  def get_is_internal(self, uri_elements):
+    return uri_elements.netloc.endswith('.wikipedia.org') and (uri_elements.path.startswith('/wiki/') or uri_elements.path == '/')
+
+  def get_base_uri(self, uri_elements):
+    return (uri_elements.scheme, uri_elements.netloc.replace('.m.', '.'), uri_elements.path, '', '', '')
+
   def get_main_uri(self):
     return 'https://' + settings.get_string('search-language') + '.m.wikipedia.org'
 

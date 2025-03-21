@@ -27,7 +27,7 @@ class Application(Adw.Application):
 
   # Initialize app
   server = None # Soup.Server()
-  uri = None
+  server_uri = None
   archives = {}
 
   def __init__(self):
@@ -189,7 +189,7 @@ class Application(Adw.Application):
         except GLib.Error:
           self.server.listen_local(0, Soup.ServerListenOptions.IPV6_ONLY)
         finally:
-          self.uri = self.server.get_uris()[0].to_string()
+          self.server_uri = self.server.get_uris()[0].to_string()
           self.server.add_handler(None, self._soup_server_cb)
 
       for file in files:
