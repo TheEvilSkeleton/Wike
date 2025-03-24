@@ -2,7 +2,12 @@
 # SPDX-FileCopyrightText: 2021-24 Hugo Olabera <hugolabe@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import urllib.parse
+
+from libzim.search import Query, Search, Searcher
 from wike.wiki import Wiki
+from wike.data import session, settings
+from gi.repository import Soup
 
 class ZIM(Wiki):
   def __init__(self, base_uri_elements, archive):
@@ -10,100 +15,39 @@ class ZIM(Wiki):
     self.archive = archive
 
   def get_random(self, lang, callback):
-    endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
-    params = { 'action': 'query',
-               'generator': 'random',
-               'grnlimit': 1,
-               'grnnamespace': 0,
-               'prop': 'info',
-               'inprop': 'url',
-               'format': 'json' }
-
-    self._request(endpoint, params, callback, None)
+    ...
 
   # Get random result from response data
 
   def random_result(self, async_result):
-    response = self.session.send_and_read_finish(async_result)
-    data = response.get_data()
-    result = json.loads(data)
-
-    pages = result['query']['pages']
-    page_props = list(pages.values())[0]
-    uri = page_props['fullurl']
-    return uri
+    ...
 
   # Search Wikipedia with a limit of responses
 
   def search(self, text, lang, limit, callback):
-    endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
-    params = { 'action': 'opensearch',
-               'search': text,
-               'limit': limit,
-               'namespace': 0,
-               'redirects': 'resolve',
-               'format': 'json' }
+    searcher = Searcher(self.archive)
+    query = Query().set_query(text)
+    search = searcher.search(query)
 
-    if callback:
-      self._request(endpoint, params, callback, None)
-      return
+    # NOTE: The camelCase attributes are planned to be removed,
+    #       so we're supporting the upcoming snake_case as a fallback
+    #       for forward compatibility:
+    #
+    # https://github.com/openzim/python-libzim/pull/212
+    try:
+      results = search.getResults(0, limit)
+    except AttributeError:
+      results = search.get_results(0, limit)
 
-    data = self._request(endpoint, params, None, None)
+    callback(None, results, None)
 
-    if data:
-      result = json.loads(data)
-      if len(result[1]) > 0:
-        return result[1], result[3]
-
-    return None
-
-  # Get search results from response data
+    return search
 
   def search_result(self, async_result):
-    response = self.session.send_and_read_finish(async_result)
-    data = response.get_data()
-    result = json.loads(data)
-
-    if len(result[1]) > 0:
-      return result[1], result[3]
-    else:
-      return None
-
-  # Get various properties for Wikipedia page
-
-  # def get_properties(self, page, callback, user_data):
-  #   endpoint = 'https://' + lang + '.wikipedia.org/w/api.php'
-  #   params = { 'action': 'parse',
-  #              'prop': 'sections|langlinks',
-  #              'redirects': 1,
-  #              'page': page,
-  #              'format': 'json' }
-
-  #   self._request(endpoint, params, callback, user_data)
-
-  # Get properties result from response data
-
-  def properties_result(self, async_result):
-    response = self.session.send_and_read_finish(async_result)
-    data = response.get_data()
-    result = json.loads(data)
-
-    return result['parse']
-
-  # Perform query to Wikipedia API with given parameters
-
-  def _request(self, endpoint, params, callback, user_data):
-    params_encoded = urllib.parse.urlencode(params, safe='%=&|')
-    message = Soup.Message.new_from_encoded_form('GET', endpoint, params_encoded)
-
-    if callback:
-      self.session.send_and_read_async(message, 0, None, callback, user_data)
-      return
-    else:
-      response = self.session.send_and_read(message, None)
-
-    if message.get_status() == Soup.Status.OK:
-      data = response.get_data()
-      return data
-    else:
-      return None
+    base_uri = urllib.parse.urlunparse(self.base_uri_elements)
+    title_list = []
+    uri_list = []
+    for path in async_result:
+      title_list.append(self.archive.get_entry_by_path(path).title)
+      uri_list.append(base_uri + path)
+    return (title_list, uri_list)
