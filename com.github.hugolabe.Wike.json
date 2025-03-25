@@ -73,17 +73,13 @@
         ]
       },
       "build-commands": [
-        "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \"libzim\" --no-build-isolation"
+        "pip3 install --verbose --exists-action=i --no-index --find-links=\"file://${PWD}\" --prefix=${FLATPAK_DEST} \".\" --no-build-isolation"
       ],
       "sources": [
         {
-          "type": "file",
-          "url": "https://files.pythonhosted.org/packages/78/f6/11e18f0dc92a518b2e88c970a480e0832fc3b44efdb2bb95de5c1ea7e226/libzim-3.6.0.tar.gz",
-          "sha256": "4dfc3a73e9e3c6e8f60a3b134f27069d74e96c4949c5aa20bb2ba994b00120be",
-          "x-checker-data": {
-            "type": "pypi",
-            "name": "libzim"
-          }
+          "type": "archive",
+          "url": "https://github.com/TheEvilSkeleton/python-libzim/archive/refs/tags/3.6.0-random-entry.tar.gz",
+          "sha256": "af6d219af6c3c4154ec3396affa2ec0a15cc7d1427ec3b3b8e59ac665aa04548"
         }
       ]
     },

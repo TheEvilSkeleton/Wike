@@ -26,8 +26,8 @@ class Wiki:
   # def get_random(lang, callback):
   #   raise NotImplementedError
 
-  # def random_result(async_result):
-  #   raise NotImplementedError
+  def random_result(self, async_result):
+    return async_result
 
   # def search(text, lang, limit, callback):
   #   raise NotImplementedError

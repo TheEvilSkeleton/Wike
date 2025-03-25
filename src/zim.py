@@ -14,13 +14,11 @@ class ZIM(Wiki):
     self.base_uri_elements = base_uri_elements
     self.archive = archive
 
-  def get_random(self, lang, callback):
-    ...
-
-  # Get random result from response data
-
-  def random_result(self, async_result):
-    ...
+  def get_random(self, callback):
+    base_uri = urllib.parse.urlunparse(self.base_uri_elements)
+    # libzim.archive.Archive.get_random_entry() is only available on a fork:
+    # https://github.com/TheEvilSkeleton/python-libzim/commit/334d296df6de9b44a5176a184e8c4a591947a32e
+    callback(None, base_uri + self.archive.get_random_entry().path, None)
 
   # Search Wikipedia with a limit of responses
 
