@@ -2,12 +2,16 @@
 # SPDX-FileCopyrightText: 2021-24 Hugo Olabera <hugolabe@gmail.com>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import os
+import re
+import contextlib
 import urllib.parse
 
+from bs4 import BeautifulSoup
 from libzim.search import Query, Search, Searcher
 from wike.wiki import Wiki
 from wike.data import session, settings
-from gi.repository import Soup
+from gi.repository import Soup, GLib
 
 class ZIM(Wiki):
   def __init__(self, base_uri_elements, archive):
@@ -49,3 +53,38 @@ class ZIM(Wiki):
       title_list.append(self.archive.get_entry_by_path(path).title)
       uri_list.append(base_uri + path)
     return (title_list, uri_list)
+
+  def get_properties(self, page, callback, user_data):
+    path = page.split(os.sep, maxsplit=2)[-1]
+
+    try:
+      entry = self.archive.get_entry_by_path(path)
+    except KeyError:
+      entry = self.archive.get_entry_by_path(self.archive.main_entry.path)
+
+    item = entry.get_item()
+
+    soup = BeautifulSoup(str(item.content, 'utf8'), "html.parser")
+
+    properties = {}
+    properties['title'] = entry.title
+    properties['langlinks'] = []
+    sections = []
+
+    every_html_heading_except_h1 = re.compile(r'^h(?!(?:1)$)\d$')
+    for tag in soup.find_all(every_html_heading_except_h1):
+      level = int(tag.name[1])
+      metadata = {}
+      metadata['toclevel'] = level - 1
+      try:
+        id = tag.get_attribute_list('id')[0]
+        metadata['anchor'] = id
+      except IndexError:
+        metadata['anchor'] = ''
+      sections.append(metadata)
+
+    properties['sections'] = sections
+
+    if callback:
+      callback(None, properties, None)
+

@@ -38,6 +38,6 @@ class Wiki:
   def get_properties(self, page, callback, user_data):
     raise NotImplementedError
 
-  def properties_result(async_result):
-    raise NotImplementedError
+  def properties_result(self, async_result):
+    return async_result
 
