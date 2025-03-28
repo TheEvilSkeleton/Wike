@@ -21,6 +21,7 @@
     <file>gtk/langlinks-row.ui</file>
     <file>gtk/languages.ui</file>
     <file>gtk/languages-row.ui</file>
+    <file>gtk/manage-archives-dialog.ui</file>
     <file>gtk/menu-article.ui</file>
     <file>gtk/menu-main.ui</file>
     <file>gtk/menu-view.ui</file>

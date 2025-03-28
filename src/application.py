@@ -17,6 +17,7 @@ gi.require_version('WebKit', '6.0')
 from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit, Soup
 
 from wike.data import settings, languages, history, bookmarks
+from wike.manage_archives_dialog import ManageArchivesDialog
 from wike.prefs import PrefsDialog
 from wike.window import Window
 from wike.view import network_session
@@ -63,10 +64,15 @@ class Application(Adw.Application):
     action = Gio.SimpleAction.new('import-zim-archives', None)
     self.add_action(action)
 
-    action = Gio.SimpleAction.new('open-zim-archives', None)
-    action.connect('activate', self._on_open_zim_archives_action_cb)
+    # action = Gio.SimpleAction.new('open-zim-archives', None)
+    # action.connect('activate', self._on_open_zim_archives_action_cb)
+    # self.add_action(action)
+    # self.set_accels_for_action('app.open-zim-archives', ('<Ctrl>o',))
+
+    action = Gio.SimpleAction.new('manage-archives', None)
+    action.connect('activate', self._manage_archives_cb)
     self.add_action(action)
-    self.set_accels_for_action('app.open-zim-archives', ('<Ctrl>o',))
+    self.set_accels_for_action('app.manage-archives', ('<Ctrl><Alt>m',))
 
     action = Gio.SimpleAction.new('prefs', None)
     action.connect('activate', self._prefs_cb)
@@ -237,6 +243,11 @@ class Application(Adw.Application):
     file_dialog.set_filters(file_filter_store)
     file_dialog.set_title(_('Open ZIM Archives'))
     file_dialog.open_multiple(self._window, callback=load_archives_cb)
+
+  # Show archive management dialog
+  def _manage_archives_cb(self, action, parameter):
+    manage_archives_dialog = ManageArchivesDialog(self._window)
+    manage_archives_dialog.present(self._window)
 
   # Show preferences dialog
 
