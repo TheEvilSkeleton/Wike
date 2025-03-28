@@ -14,6 +14,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
     <!-- Preferences page -->
     <child>
       <object class="AdwPreferencesPage">
+        <property name="title" translatable="yes">General</property>
+        <property name="icon-name">settings-symbolic</property>
 
         <!-- Group behavior -->
         <child>

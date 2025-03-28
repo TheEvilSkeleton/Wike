@@ -22,6 +22,7 @@ wike_sources = [
   'history.py',
   'langlinks.py',
   'languages.py',
+  'manage_archives_dialog.py',
   'menu.py',
   'page.py',
   'prefs.py',

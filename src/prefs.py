@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 
-from gi.repository import Gio, Gtk, Adw, WebKit
+from pathlib import Path
+from libzim.reader import Archive
+
+from gi.repository import Gio, Gtk, Adw, WebKit, GLib
 
 from wike.data import settings
 from wike.view import network_session
