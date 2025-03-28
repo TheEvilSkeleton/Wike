@@ -60,6 +60,9 @@ class Application(Adw.Application):
       case 3:
         self._style_manager.set_color_scheme(Adw.ColorScheme.PREFER_LIGHT)
 
+    action = Gio.SimpleAction.new('import-zim-archives', None)
+    self.add_action(action)
+
     action = Gio.SimpleAction.new('open-zim-archives', None)
     action.connect('activate', self._on_open_zim_archives_action_cb)
     self.add_action(action)
