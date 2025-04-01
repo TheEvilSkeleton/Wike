@@ -7,6 +7,13 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 <interface>
   <template class="ArchiveRow" parent="AdwActionRow">
+    <property name="active" bind-source="check_button" bind-property="active" bind-flags="sync-create|bidirectional" />
+    <child type="prefix">
+      <object class="GtkCheckButton" id="check_button">
+        <property name="valign">center</property>
+      </object>
+    </child>
+
     <child>
       <object class="GtkButton">
         <property name="icon-name">software-update-available-symbolic</property>

@@ -6,6 +6,8 @@
 import os
 import urllib.parse
 
+from pathlib import Path
+from libzim import Archive
 from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit
 
 from wike.data import settings
@@ -93,7 +95,16 @@ class Window(Adw.ApplicationWindow):
     self.history_panel = HistoryPanel(self)
     history_stack_page = self.panel_stack.add_named(self.history_panel, 'history')
 
-    self.page = PageBox(self, WikiView(Wikipedia()), None)
+    is_offline = settings.get_boolean('offline-mode')
+    file_name = settings.get_string('offline-archive')
+    if is_offline and file_name:
+      archive = Archive(Path(GLib.get_user_data_dir()) / 'archives' / file_name)
+      uuid = str(archive.uuid)
+      uri = f'{app.server_uri}{archive.uuid}{os.sep}'
+      app.archives[uuid] = archive
+      self.page = PageBox(self, WikiView(ZIM(urllib.parse.urlparse(uri), archive)), None)
+    else:
+      self.page = PageBox(self, WikiView(Wikipedia()), None)
 
     if launch_uri != '':
       tabpage = self.tabview.append(self.page)

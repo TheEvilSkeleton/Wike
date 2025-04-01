@@ -117,5 +117,14 @@
       <summary>Window is maximized</summary>
     </key>
 
+    <key name="offline-mode" type="b">
+      <default>false</default>
+      <summary>Offline mode</summary>
+    </key>
+
+    <key name="offline-archive" type="s">
+      <default>""</default>
+      <summary>Offline archive</summary>
+    </key>
   </schema>
 </schemalist>

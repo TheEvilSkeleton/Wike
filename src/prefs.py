@@ -26,6 +26,7 @@ class PrefsDialog(Adw.PreferencesDialog):
   clear_history_button = Gtk.Template.Child()
   data_switch = Gtk.Template.Child()
   clear_data_button = Gtk.Template.Child()
+  offline_switch = Gtk.Template.Child()
 
   # Connect signals and bindings
 
@@ -39,6 +40,7 @@ class PrefsDialog(Adw.PreferencesDialog):
     settings.bind('search-desktop', self.desktop_switch, 'active', Gio.SettingsBindFlags.DEFAULT)
     settings.bind('keep-history', self.history_switch, 'active', Gio.SettingsBindFlags.DEFAULT)
     settings.bind('clear-data', self.data_switch, 'active', Gio.SettingsBindFlags.DEFAULT)
+    settings.bind('offline-mode', self.offline_switch, 'active', Gio.SettingsBindFlags.DEFAULT)
 
     self.clear_history_button.connect('clicked', self._clear_history_button_cb)
     self.clear_data_button.connect('clicked', self._clear_data_button_cb)

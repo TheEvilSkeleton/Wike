@@ -22,6 +22,12 @@ SPDX-License-Identifier: GPL-3.0-or-later
           <object class="AdwPreferencesGroup">
             <property name="title" translatable="yes">Behavior</property>
 
+            <child>
+              <object class="AdwSwitchRow" id="offline_switch">
+                <property name="title" translatable="yes">Offline Mode</property>
+              </object>
+            </child>
+
             <!-- Home page selector -->
             <child>
               <object class="AdwComboRow" id="start_combo">

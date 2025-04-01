@@ -40,6 +40,16 @@ class Application(Adw.Application):
 
     self.add_main_option('url', b'u', GLib.OptionFlags.NONE, GLib.OptionArg.STRING, 'Open Wikipedia URL', None)
 
+    if settings.get_string('offline-archive'):
+      self.server = Soup.Server()
+      try:
+        self.server.listen_local(0, Soup.ServerListenOptions.IPV4_ONLY)
+      except GLib.Error:
+        self.server.listen_local(0, Soup.ServerListenOptions.IPV6_ONLY)
+      finally:
+        self.server_uri = self.server.get_uris()[0].to_string()
+        self.server.add_handler(None, self._on_server_handler)
+
   # Load custom css and set actions
 
   def do_startup(self):

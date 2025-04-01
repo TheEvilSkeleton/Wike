@@ -42,6 +42,10 @@ class ZIM(Wiki):
 
     return search
 
+  def get_main_uri(self):
+    base_uri = urllib.parse.urlunparse(self.base_uri_elements)
+    return base_uri + self.archive.main_entry.path
+
   def search_result(self, async_result):
     base_uri = urllib.parse.urlunparse(self.base_uri_elements)
     title_list = []
