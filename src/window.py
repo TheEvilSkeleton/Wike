@@ -10,7 +10,7 @@ from pathlib import Path
 from libzim import Archive
 from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit
 
-from wike.data import settings
+from wike.data import settings, archives_server
 from wike.bookmarks import BookmarksPanel
 from wike.history import HistoryPanel
 from wike.langlinks import LanglinksPanel
@@ -100,8 +100,8 @@ class Window(Adw.ApplicationWindow):
     if is_offline and file_name and (archive_path := Path(GLib.get_user_data_dir()) / 'archives' / file_name).exists():
       archive = Archive(archive_path)
       uuid = str(archive.uuid)
-      uri = f'{app.server_uri}{archive.uuid}{os.sep}'
-      app.archives[uuid] = archive
+      uri = f'{archives_server.server_uri}{archive.uuid}{os.sep}'
+      archives_server.archives[uuid] = archive
       self.page = PageBox(self, WikiView(ZIM(urllib.parse.urlparse(uri), archive)), None)
     else:
       self.page = PageBox(self, WikiView(Wikipedia()), None)
@@ -386,10 +386,9 @@ class Window(Adw.ApplicationWindow):
   # Load ZIM file and create new tab with a page
 
   def new_zim_page(self, archive, parent, select):
-    app = self.get_application()
     entry = archive.get_entry_by_path(archive.main_entry.path)
     item = entry.get_item()
-    uri = f'{app.server_uri}{archive.uuid}{os.sep}'
+    uri = f'{archives_server.server_uri}{archive.uuid}{os.sep}'
     wiki = ZIM(urllib.parse.urlparse(uri), archive)
     page = PageBox(self, WikiView(wiki), None)
     tabpage = self.tabview.add_page(page, parent)

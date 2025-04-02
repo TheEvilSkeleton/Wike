@@ -16,7 +16,7 @@ gi.require_version('Adw', '1')
 gi.require_version('WebKit', '6.0')
 from gi.repository import GLib, Gio, Gdk, Gtk, Adw, WebKit, Soup
 
-from wike.data import settings, languages, history, bookmarks
+from wike.data import settings, languages, history, bookmarks, archives_server
 from wike.manage_archives_dialog import ManageArchivesDialog
 from wike.prefs import PrefsDialog
 from wike.window import Window
@@ -28,9 +28,6 @@ from wike.view import network_session
 class Application(Adw.Application):
 
   # Initialize app
-  server = None # Soup.Server()
-  server_uri = None
-  archives = {}
 
   def __init__(self):
     super().__init__(application_id='com.github.hugolabe.Wike', flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
@@ -41,14 +38,14 @@ class Application(Adw.Application):
     self.add_main_option('url', b'u', GLib.OptionFlags.NONE, GLib.OptionArg.STRING, 'Open Wikipedia URL', None)
 
     if settings.get_string('offline-archive'):
-      self.server = Soup.Server()
+      archives_server.server = Soup.Server()
       try:
-        self.server.listen_local(0, Soup.ServerListenOptions.IPV4_ONLY)
+        archives_server.server.listen_local(0, Soup.ServerListenOptions.IPV4_ONLY)
       except GLib.Error:
-        self.server.listen_local(0, Soup.ServerListenOptions.IPV6_ONLY)
+        archives_server.server.listen_local(0, Soup.ServerListenOptions.IPV6_ONLY)
       finally:
-        self.server_uri = self.server.get_uris()[0].to_string()
-        self.server.add_handler(None, self._on_server_handler)
+        archives_server.server_uri = archives_server.server.get_uris()[0].to_string()
+        archives_server.server.add_handler(None, self._on_server_handler)
 
   # Load custom css and set actions
 
@@ -192,7 +189,7 @@ class Application(Adw.Application):
       msg.set_status(Soup.Status.NOT_FOUND, None)
       return
 
-    archive = self.archives[uuid]
+    archive = archives_server.archives[uuid]
     relative_path = path.split(os.sep, maxsplit=2)[-1]
 
     if archive.has_entry_by_path(relative_path):
@@ -220,23 +217,23 @@ class Application(Adw.Application):
       except GLib.GError:
         return
 
-      if not self.server:
-        self.server = Soup.Server()
+      if not archives_server.server:
+        archives_server.server = Soup.Server()
         try:
-          self.server.listen_local(0, Soup.ServerListenOptions.IPV4_ONLY)
+          archives_server.server.listen_local(0, Soup.ServerListenOptions.IPV4_ONLY)
         except GLib.Error:
-          self.server.listen_local(0, Soup.ServerListenOptions.IPV6_ONLY)
+          archives_server.server.listen_local(0, Soup.ServerListenOptions.IPV6_ONLY)
         finally:
-          self.server_uri = self.server.get_uris()[0].to_string()
-          self.server.add_handler(None, self._on_server_handler)
+          archives_server.server_uri = archives_server.server.get_uris()[0].to_string()
+          archives_server.server.add_handler(None, self._on_server_handler)
 
       for file in files:
         file_path = str(file.get_path())
         archive = Archive(Path(file_path))
 
         uuid = str(archive.uuid)
-        if uuid not in self.archives:
-          self.archives[uuid] = archive
+        if uuid not in archives_server.archives:
+          archives_server.archives[uuid] = archive
 
         self._window.new_zim_page(archive, None, True)
 

@@ -9,7 +9,7 @@ import os
 import sys
 import gettext
 
-from gi.repository import GLib, Gio
+from gi.repository import GLib, Gio, Soup
 
 pkgdatadir = '@pkgdatadir@'
 localedir = '@localedir@'
@@ -19,7 +19,7 @@ resource._register()
 gettext.install('wike', localedir)
 
 from wike import wikipedia
-from wike.data import settings, languages
+from wike.data import settings, languages, archives_server
 
 dbus_interface_description = '''
 <!DOCTYPE node PUBLIC
@@ -70,25 +70,35 @@ class WikeSearchService:
 
   def GetInitialResultSet(self, terms):
     text = ' '.join(terms)
-    lang = self._lang
     self._results.clear()
+    print("????????????????????")
+    is_offline = settings.get_boolean('offline-mode')
+    file_name = settings.get_string('offline-archive')
+    if is_offline and file_name and (archive_path := Path(GLib.get_user_data_dir()) / 'archives' / file_name).exists():
+      if len(text) > 2:
+        if settings.get_boolean('search-desktop'):
+          self._get_results(text, "")
+        else:
+          key = text
+          value = _('Search “%s” on Wikipedia') % text
+          self._results[key] = value
+    else:
+      if text.startswith('-'):
+        prefix = terms[0].lstrip('-')
+        if prefix in languages.wikilangs.keys():
+          lang = prefix
+        if len(terms) > 1:
+          text = text.split(' ', 1)[1]
+        else:
+          text = ''
 
-    if text.startswith('-'):
-      prefix = terms[0].lstrip('-')
-      if prefix in languages.wikilangs.keys():
-        lang = prefix
-      if len(terms) > 1:
-        text = text.split(' ', 1)[1]
-      else:
-        text = ''
-
-    if len(text) > 2:
-      if settings.get_boolean('search-desktop'):
-        self._get_results(text, lang)
-      else:
-        key = 'search:' + lang + ':' + text
-        value = _('Search “%s” on Wikipedia') % text
-        self._results[key] = value
+      if len(text) > 2:
+        if settings.get_boolean('search-desktop'):
+          self._get_results(text, lang)
+        else:
+          key = 'search:' + lang + ':' + text
+          value = _('Search “%s” on Wikipedia') % text
+          self._results[key] = value
 
     return self._results.keys()
 
@@ -110,8 +120,68 @@ class WikeSearchService:
 
   # Open clicked result in Wike app
 
+  def _parse_server_data(self, path, referer):
+    uuid = Path(path).parts[1]
+    try:
+      UUID(uuid)
+      return (uuid, False)
+    except ValueError:
+      uri = GLib.Uri.parse(referer, GLib.UriFlags.NONE)
+      file_path = str(uri.get_path())
+      uuid = Path(file_path).parts[1]
+      UUID(uuid)
+      return (uuid, True)
+
+  def _on_server_handler(self, server, msg, path, query):
+    headers = msg.get_request_headers()
+    referer = str(headers.get_one('Referer'))
+
+    try:
+      uuid, should_redirect = self._parse_server_data(path, referer)
+    except (ValueError, GLib.GError):
+      body = f'{Soup.Status.get_phrase(Soup.Status.NOT_FOUND)}'.encode()
+      msg.set_response('text/html', Soup.MemoryUse.COPY, body)
+      msg.set_status(Soup.Status.NOT_FOUND, None)
+      return
+
+    archive = self.archives[uuid]
+    relative_path = path.split(os.sep, maxsplit=2)[-1]
+
+    if archive.has_entry_by_path(relative_path):
+      entry = archive.get_entry_by_path(relative_path)
+    elif not relative_path:
+      entry = archive.get_entry_by_path(archive.main_entry.path)
+    else:
+      body = f'{Soup.Status.get_phrase(Soup.Status.NOT_FOUND)}'.encode()
+      msg.set_response('text/html', Soup.MemoryUse.COPY, body)
+      msg.set_status(Soup.Status.NOT_FOUND, None)
+      return
+
+    if should_redirect:
+      article_path = str(Path(os.sep) / uuid / path.removeprefix(os.sep))
+      msg.set_redirect(Soup.Status.MOVED_PERMANENTLY, article_path)
+    else:
+      item = entry.get_item()
+      msg.set_response(item.mimetype, Soup.MemoryUse.COPY, item.content)
+      msg.set_status(Soup.Status.OK, None)
+
   def ActivateResult(self, id, terms, timestamp):
-    if id.startswith('search'):
+    is_offline = settings.get_boolean('offline-mode')
+    file_name = settings.get_string('offline-archive')
+    if is_offline and file_name and (archive_path := Path(GLib.get_user_data_dir()) / 'archives' / file_name).exists():
+      archives_server.server = Soup.Server()
+      try:
+        archives_server.server.listen_local(0, Soup.ServerListenOptions.IPV4_ONLY)
+      except GLib.Error:
+        archives_server.server.listen_local(0, Soup.ServerListenOptions.IPV6_ONLY)
+      finally:
+        archives_server.server_uri = archives_server.server.get_uris()[0].to_string()
+        archives_server.server.add_handler(None, self._on_server_handler)
+      archive = Archive(archive_path)
+      uuid = str(archive.uuid)
+      uri = f'{archives_server.server_uri}{archive.uuid}{os.sep}'
+      archives_server.archives[uuid] = archive
+    elif id.startswith('search'):
       self._results.clear()
       text = id.replace('search:', '', 1)
       params = text.split(':', 1)

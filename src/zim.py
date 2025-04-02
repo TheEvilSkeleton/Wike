@@ -38,9 +38,13 @@ class ZIM(Wiki):
     except AttributeError:
       results = search.get_results(0, limit)
 
-    callback(None, results, None)
+    if callback:
+      callback(None, results, None)
+      return search
 
-    return search
+    return self.search_result(results)
+
+
 
   def get_main_uri(self):
     base_uri = urllib.parse.urlunparse(self.base_uri_elements)
