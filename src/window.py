@@ -97,8 +97,8 @@ class Window(Adw.ApplicationWindow):
 
     is_offline = settings.get_boolean('offline-mode')
     file_name = settings.get_string('offline-archive')
-    if is_offline and file_name:
-      archive = Archive(Path(GLib.get_user_data_dir()) / 'archives' / file_name)
+    if is_offline and file_name and (archive_path := Path(GLib.get_user_data_dir()) / 'archives' / file_name).exists():
+      archive = Archive(archive_path)
       uuid = str(archive.uuid)
       uri = f'{app.server_uri}{archive.uuid}{os.sep}'
       app.archives[uuid] = archive
