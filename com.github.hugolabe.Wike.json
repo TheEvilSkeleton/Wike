@@ -1,29 +1,29 @@
 {
-  "app-id" : "com.github.hugolabe.Wike",
-  "runtime" : "org.gnome.Platform",
-  "runtime-version" : "48",
-  "sdk" : "org.gnome.Sdk",
-  "command" : "wike",
-  "finish-args" : [
-    "--share=network",
-    "--share=ipc",
-    "--socket=fallback-x11",
-    "--socket=wayland",
-    "--socket=pulseaudio",
-    "--device=dri"
-  ],
-  "modules" : [
-    {
-      "name" : "wike",
-      "buildsystem" : "meson",
-      "builddir" : true,
-      "run-tests" : true,
-      "sources" : [
+    "app-id": "com.github.hugolabe.Wike",
+    "runtime": "org.gnome.Platform",
+    "runtime-version": "48",
+    "sdk": "org.gnome.Sdk",
+    "command": "wike",
+    "finish-args": [
+        "--share=network",
+        "--share=ipc",
+        "--socket=fallback-x11",
+        "--socket=wayland",
+        "--socket=pulseaudio",
+        "--device=dri"
+    ],
+    "modules": [
         {
-          "type" : "dir",
-          "path" : "."
+            "name": "wike",
+            "buildsystem": "meson",
+            "builddir": true,
+            "run-tests": true,
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "."
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
